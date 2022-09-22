@@ -1,0 +1,6 @@
+version=4
+opts=" \
+uversionmangle=s/(\d)[_\.\-\+]?((RC|rc|pre|dev|beta|alpha)\d*)$/$1~$2/, \
+filenamemangle=s/.+\/v?(\d\S+)\.tar\.gz/openexr-$1\.tar\.gz/, \
+pgpsigurlmangle=s/archive\/(\d\S+)\.tar\.gz/releases\/download\/$1\/$1\.tar\.gz\.asc" \
+https://github.com/AcademySoftwareFoundation/openexr/tags .*/v?(\d\S+)\.tar\.gz

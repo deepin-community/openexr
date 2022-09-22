@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+# © 2009 Cyril Brulebois <kibi@debian.org>
+
+# https://bugs.debian.org/793041
+export AUTOHEADER = true
+export DEB_BUILD_MAINT_OPTIONS := hardening=+bindnow
+
+DEB_BUILD_ARCH      ?= $(shell dpkg-architecture -qDEB_BUILD_ARCH)
+IGNORE_CHECK_RESULTS_ARCHS := alpha hppa mips
+
+# Need to disable the test suite on all architectures:
+override_dh_auto_test:
+	-dh_auto_test
+
+# No need to compress .pdf files:
+override_dh_compress:
+	dh_compress -X.pdf -X.cpp -X.h
+
+%:
+	dh $@ -Bbuild -DOpenEXR -Scmake
