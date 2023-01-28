@@ -1,6 +1,6 @@
 dnl
 dnl SPDX-License-Identifier: BSD-3-Clause
-dnl Copyright Contributors to the OpenEXR Project.
+dnl Copyright (c) Contributors to the OpenEXR Project.
 dnl
 
 dnl Process this file with autoconf to produce a configure script.
@@ -62,7 +62,7 @@ AM_PATH_PKGCONFIG(
    [OpenEXR],
    [OpenEXR],
    [$LIB64_IF_EXISTS -L/usr/local/lib],
-   [-lIlmImf -lImath -lIex -lHalf -lz -lpthread],
+   [-lOpenEXR -lImath -lIex -lHalf -lz -lpthread],
    [openexr-prefix])
 
 
