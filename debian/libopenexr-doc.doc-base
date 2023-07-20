@@ -1,0 +1,7 @@
+Document: imath
+Title: Debian OpenEXR Manual
+Section: Programming/C++
+
+Format: HTML
+Index: /usr/share/doc/libopenexr-doc/html/index.html
+Files: /usr/share/doc/libopenexr-doc/html/*.html
