@@ -1,20 +1,32 @@
 #!/usr/bin/make -f
-# © 2009 Cyril Brulebois <kibi@debian.org>
 
-# https://bugs.debian.org/793041
-export AUTOHEADER = true
-export DEB_BUILD_MAINT_OPTIONS := hardening=+bindnow
+export DH_OPTIONS
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
-DEB_BUILD_ARCH      ?= $(shell dpkg-architecture -qDEB_BUILD_ARCH)
-IGNORE_CHECK_RESULTS_ARCHS := alpha hppa mips
+INSTDIR = debian/tmp
 
-# Need to disable the test suite on all architectures:
-override_dh_auto_test:
-	-dh_auto_test
-
-# No need to compress .pdf files:
-override_dh_compress:
-	dh_compress -X.pdf -X.cpp -X.h
+# deduce documentation option (build-indep target)
+ifeq "" "$(filter %-doc,$(shell dh_listpackages))"
+  BUILDDOC = OFF
+else
+  BUILDDOC = ON
+endif
 
 %:
-	dh $@ -Bbuild -DOpenEXR -Scmake
+	dh $@ -Bbuild -Scmake
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		-DDOCS=$(BUILDDOC)
+
+override_dh_install:
+	rm -f $(INSTDIR)/usr/share/doc/OpenEXR/sphinx/_static/doctools.js
+	rm -f $(INSTDIR)/usr/share/doc/OpenEXR/sphinx/_static/jquery.js
+	rm -f $(INSTDIR)/usr/share/doc/OpenEXR/sphinx/_static/language_data.js
+	rm -f $(INSTDIR)/usr/share/doc/OpenEXR/sphinx/_static/searchtools.js
+	rm -f $(INSTDIR)/usr/share/doc/OpenEXR/sphinx/_static/underscore.js
+	rm -f $(INSTDIR)/usr/share/doc/OpenEXR/sphinx/.buildinfo
+	rm -rf $(INSTDIR)/usr/share/doc/OpenEXR/sphinx/.doctrees
+	dh_install
+
+override_dh_auto_test:

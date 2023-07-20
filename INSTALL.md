@@ -3,46 +3,36 @@
 ## Download
 
 To build the latest release of OpenEXR, begin by downloading the
-source from the Releases page
-https://github.com/AcademySoftwareFoundation/openexr/tarball/v2.5.1.
+source from the GitHub Releases page: 
+https://github.com/AcademySoftwareFoundation/openexr/releases.
 
 To build from the latest development version, which may not be stable,
-download the master branch via
-https://github.com/AcademySoftwareFoundation/openexr/tarball/master, and extract the
-contents via ``tar``.
+clone the GitHub repo and build from the master branch:
 
-You can download the repository tarball file either via a browser, or
-on the Linux/macOS via the command line using ``wget`` or ``curl``:
+    % git clone https://github.com/AcademySoftwareFoundation/openexr
+
+You can alternatively download the repository tarball file either via
+a browser, or on the Linux/macOS via the command line using ``wget``
+or ``curl``:
 
     % curl -L https://github.com/AcademySoftwareFoundation/openexr/tarball/master | tar xv
 
-This will produce a source directory named
-``openexr-openexr-<abbreviated-SHA-1-checksum>``.
-
-Alternatively, clone the GitHub repo directly via:
-
-    % git clone https://github.com/AcademySoftwareFoundation/openexr.git
-
 In the instructions that follow, we will refer to the top-level
-directory of the source code tree as ``$source_directory``.
+directory of the source code tree as ``$openexr_source_directory``.
 
 ## Prerequisites
 
 Make sure these are installed on your system before building OpenEXR:
 
-* OpenEXR requires CMake version 3.10 or newer (or autoconf on Linux systems).
-  - NB: CMake 3.12 is required for current PyIlmBase support
+* OpenEXR requires CMake version 3.12 or newer
 * C++ compiler that supports C++11
-* Zlib
-* Python and boost-python if building the PyIlmBase module.
-  - NB: If you have a custom install of boost and have issues, you may
-    need to set Boost_ROOT and/or manually disable Boost_NO_BOOST_CMAKE
-    in the PyIlmBase cmake file when you run cmake. See the FindBoost
-    documentation that is part of cmake for more information.
+* zlib 
+* Imath (auto fetched by CMake if not found)
 
-The instructions that follow describe building OpenEXR with CMake, but
-you can also build and install OpenEXR via the autoconf
-bootstrap/configure utilities, described below.
+The instructions that follow describe building OpenEXR with CMake.
+
+Note that as of OpenEXR 3, the Gnu autoconf bootstrap/configure build
+system is no longer supported.
 
 ## Linux/macOS Quick Start
 
@@ -51,7 +41,7 @@ which we will refer to as ``$build_directory``.
 
     % mkdir $build_directory
     % cd $build_directory
-    % cmake $source_directory
+    % cmake $openexr_source_directory
     % make
     % make install
 
@@ -79,79 +69,102 @@ installs the headers, libraries, and programs into ``/usr/local``, but you
 can specify a local install directory to cmake via the
 ``CMAKE_INSTALL_PREFIX`` variable:
 
-    % cmake .. -DCMAKE_INSTALL_PREFIX=$install_directory
+    % cmake .. -DCMAKE_INSTALL_PREFIX=$openexr_install_directory
+
+## Porting Applications from OpenEXR v2 to v3
+
+See the [porting
+guide](https://github.com/AcademySoftwareFoundation/Imath/blob/master/docs/PortingGuide2-3.md)
+for details about differences from previous releases and how to
+address them. Also refer to the porting guide for details about
+changes to Imath.
+
+## Documentation
+
+The OpenEXR technical documentation at
+[openexr.readthedocs.io](https://openexr.readthedocs.io) is generated
+via [Sphinx](https://www.sphinx-doc.org) with the
+[Breathe](https://breathe.readthedocs.io) extension using information
+extracted from header comments by [Doxgen](https://www.doxygen.nl).
+
+To build the documentation locally from the source headers and
+``.rst`` files, set the CMake option ``DOCS=ON``. This adds
+``Doxygen`` and ``Sphinx`` CMake targets. Local documentation
+generation is off by default.
+
+Building the documentation requires that sphinx, breathe, and doxygen
+are installed.
+
+Note that the [openexr.readthedocs.io](https://openexr.readthedocs.io)
+documentation takes the place of the formerly distributed .pdf
+documents in the ``docs`` folder, although readthedocs supports
+downloading of documentation in pdf format, for those who prefer it
+that way.
 
 ## Library Names
 
-Using either cmake or autoconf based configuration mechanisms described
-in this document, by default the installed libraries follow a pattern
-for how they are named. This is done to enable multiple versions of the
-library to be installed and targeted by different builds depending on
-the needs of the project. A simple example of this would be to have
-different versions of the library installed to allow for applications
-targeting different VFX Platform years to co-exist.
+By default the installed libraries follow a pattern for how they are
+named. This is done to enable multiple versions of the library to be
+installed and targeted by different builds depending on the needs of
+the project. A simple example of this would be to have different
+versions of the library installed to allow for applications targeting
+different VFX Platform years to co-exist.
 
 If you are building dynamic libraries, once you have configured, built,
 and installed the libraries, you should see the following pattern of
 symlinks and files in the install lib folder:
 
-    libHalf.so -> libHalf-$LIB_SUFFIX.so
-    libHalf-$LIB_SUFFIX.so -> libHalf-$LIB_SUFFIX.so.$SO_MAJOR_VERSION
-    libHalf-$LIB_SUFFIX.so.$SO_MAJOR_VERSION -> libHalf-$LIB_SUFFIX.so.$SO_FULL_VERSION
-    libHalf-$LIB_SUFFIX.so.$SO_FULL_VERSION (actual file)
+    libOpenEXR.so -> libOpenEXR-3_1.so
+    libOpenEXR-3_1.so -> libOpenEXR-3_1.so.30
+    libOpenEXR-3_1.so.30 -> libOpenEXR-3_1.so.30.3.0
+    libOpenEXR-3_1.so.30.3.0 (the shared object file)
+    
+The ``-3_1`` suffix encodes the major and minor version, which can be
+configured via the ``OPENEXR_LIB_SUFFIX`` CMake setting. The "30"
+corresponds to the so version, or in ``libtool`` terminology the
+_current_ shared object version; the "3" denotes the ``libtool``
+_revision_, and the "0" denotes the ``libtool`` _age_. See the
+[``libtool``](https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html#Updating-version-info)
+documentation for more details.
 
-You can configure the LIB_SUFFIX, although it defaults to the library
-major and minor version, so in the case of a 2.3 library, it would default
-to 2_3. You would then link your programs against this versioned library
-to have maximum safety (i.e. `-lHalf-2_3`), and the pkg-config and cmake
-configuration files included with find_package should set this up.
+## Imath Dependency
 
-## Sub-Modules
-
-OpenEXR consists of three separate sub-modules - IlmBase, PyIlmBase,
-and OpenEXR - which can be built independently. The repository’s
-top-level CMakeLists.txt defines a *super-project* that builds all
-three modules, and the steps above for running cmake at the top level
-of the repo build each of the sub-modules, in parallel.
-
-However you can build each submodule individually. To build and
-install individual sub-modules, build and install the IlmBase module
-first:
-
-    % mkdir $build_directory
-    % cd $build_directory
-    % cmake -DCMAKE_INSTALL_PREFIX=$install_directory \ $source_directory/Ilmbase
-    % cmake --build . --target install --config Release 
-
-Once IlmBase is installed, then build and install the OpenEXR module,
-taking care to set the ``CMAKE_SYSTEM_PREFIX`` to the directory in which
-you installed IlmBase and ``CMAKE_INSTALL_PREFIX`` to the directory in
-which to install OpenEXR:
+OpenEXR depends on
+[Imath](https://github.com/AcademySoftwareFoundation/Imath). If a
+suitable installation of Imath cannot be found, CMake will
+automatically download it at configuration time. To link against an
+existing installation of Imath, add the Imath directory to the
+``CMAKE_PREFIX_PATH`` setting:
  
     % mkdir $build_directory
     % cd $build_directory
-    % cmake -DCMAKE_SYSTEM_PREFIX=$install_directory \ 
-            -DCMAKE_INSTALL_PREFIX=$install_directory \ 
-            $source_directory/OpenEXR
+    % cmake -DCMAKE_PREFIX_PATH=$imath_install_directory \
+            -DCMAKE_INSTALL_PREFIX=$openexr_install_destination \
+            $openexr_source_directory
     % cmake --build . --target install --config Release
 
-Optionally, then build and install PyIlmBase
+Alternatively, you can specify the ``Imath_DIR`` variable:
 
-The libraries in IlmBase and OpenEXR follow the standard cmake setting
-of ``BUILD_SHARED_LIBS`` to control whether to build static or shared
-libraries. However, they each have separate controls over whether to
-build both shared and static libraries as part of one configuration,
-as well as other customization options.
+    % mkdir $build_directory
+    % cd $build_directory
+    % cmake -DImath_DIR=$imath_config_directory \
+            -DCMAKE_INSTALL_PREFIX=$openexr_install_destination \
+            $openexr_source_directory
+    % cmake --build . --target install --config Release
+
+Note that ``Imath_DIR`` should point to the directory that includes
+the ``ImathConfig.cmake`` file, which is typically the
+``lib/cmake/Imath`` folder of the root install directory where Imath
+is installed.
+
+Please see ``cmake/OpenEXRSetup.cmake`` for other customization options.
 
 ## Custom Namespaces
 
 If you are interested in controlling custom namespace declarations or
 similar options, you are encouraged to look at the ``CMakeLists.txt``
-infrastructure. In particular, there has been an attempt to centralize
-the settings into a common place to more easily see all of them in a
-text editor. For IlmBase, this is config/IlmBaseSetup.cmake inside the
-IlmBase tree. For OpenEXR, the settings will similarly be found in
-``config/OpenEXRSetup.cmake``. As per usual, these settings can also be
+infrastructure. The settings can be found in
+``cmake/OpenEXRSetup.cmake``. As per usual, these settings can also be
 seen and/or edited using any of the various gui editors for working
 with cmake such as ``ccmake``, ``cmake-gui``, as well as some of the
 IDEs in common use.
@@ -159,8 +172,8 @@ IDEs in common use.
 ## Cross Compiling / Specifying Specific Compilers
 
 When trying to either cross-compile for a different platform, or for
-tasks such as specifying a compiler set to match the VFX reference
-platform (https://vfxplatform.com/), cmake provides the idea of a
+tasks such as specifying a compiler set to match the [VFX reference
+platform](https://vfxplatform.com), cmake provides the idea of a
 toolchain which may be useful instead of having to remember a chain of
 configuration options. It also means that platform-specific compiler
 names and options are out of the main cmake file, providing better
@@ -188,11 +201,10 @@ More documentation:
 ## CMake Configuration Options
 
 The default CMake configuration options are stored in
-``IlmBase/config/IlmBaseSetup.cmake`` and in
-``OpenEXR/config/OpenEXRSetup.cmake``. To see a complete set of option
+``cmake/OpenEXRSetup.cmake``. To see a complete set of option
 variables, run:
 
-    % cmake -LAH $source_directory
+    % cmake -LAH $openexr_source_directory
 
 You can customize these options three ways:
 
@@ -200,171 +212,146 @@ You can customize these options three ways:
 2. Use the UI ``cmake-gui`` or ``ccmake``.
 2. Specify them as command-line arguments when you invoke cmake.
 
-### Verbose Output Options:
-
-* **CMAKE\_EXPORT\_COMPILE\_COMMANDS**
-
-  Enable/Disable output of compile commands during generation. Default is OFF.
-
-* **CMAKE\_VERBOSE\_MAKEFILE**
-
-  Echo all compile commands during make. Default is OFF.
-
-### Compiler Options:
-
-* **OPENEXR\_CXX\_STANDARD**
-
-  C++ standard to compile against. This obeys the global ``CMAKE_CXX_STANDARD`` but doesn’t force the global setting to enable sub-project inclusion. Default is ``14``.
-
 ### Library Naming Options:
 
-* **ILMBASE\_LIB\_SUFFIX**
+* ``OPENEXR_LIB_SUFFIX``
 
-  Append the given string to the end of all the IlmBase libraries. Default is ``-<major>_<minor>`` version string. Please see the section on library names
+  Append the given string to the end of all the OpenEXR
+  libraries. Default is ``-<major>_<minor>`` version string. Please
+  see the section on library names
 
-* **OPENEXR\_LIB\_SUFFIX**
+### Imath Dependency:
 
-  Append the given string to the end of all the OpenEXR libraries. Default is ``-<major>_<minor>`` version string. Please see the section on library names
+* ``CMAKE_PREFIX_PATH``
 
+  The standard CMake path in which to
+  search for dependencies, Imath in particular.  A comma-separated
+  path. Add the root directory where Imath is installed.
+
+* ``Imath_DIR``
+
+  The config directory where Imath is installed. An alternative to
+  using ``CMAKE_PREFIX_PATH``.  Note that ``Imath_DIR`` should
+  be set to the directory that includes the ``ImathConfig.cmake``
+  file, which is typically the ``lib/cmake/Imath`` folder of the root
+  install directory.
+  
 ### Namespace Options:
 
-* **ILMBASE\_IEX\_NAMESPACE**
+* ``OPENEXR_IMF_NAMESPACE``
+
+  Public namespace alias for OpenEXR. Default is ``Imf``.
+
+* ``OPENEXR_INTERNAL_IMF_NAMESPACE``
+
+  Real namespace for OpenEXR that will end up in compiled
+  symbols. Default is ``Imf_<major>_<minor>``.
+
+* ``OPENEXR_NAMESPACE_CUSTOM``
+
+  Whether the namespace has been customized (so external users know)
+
+* ``IEX_NAMESPACE``
 
   Public namespace alias for Iex. Default is ``Iex``.
 
-* **ILMBASE\_ILMTHREAD\_NAMESPACE**
+* ``IEX_INTERNAL_NAMESPACE``
+
+  Real namespace for Iex that will end up in compiled symbols. Default
+  is ``Iex_<major>_<minor>``.
+
+* ``IEX_NAMESPACE_CUSTOM``
+
+  Whether the namespace has been customized (so external users know)
+
+* ``ILMTHREAD_NAMESPACE``
 
   Public namespace alias for IlmThread. Default is ``IlmThread``.
 
-* **ILMBASE\_IMATH\_NAMESPACE**
- 
-  Public namespace alias for Imath. Default is ``Imath``.
+* ``ILMTHREAD_INTERNAL_NAMESPACE``
 
-* **ILMBASE\_INTERNAL\_IEX\_NAMESPACE**
- 
-  Real namespace for Iex that will end up in compiled symbols. Default is ``Iex\_<major>\_<minor>``.
+  Real namespace for IlmThread that will end up in compiled
+  symbols. Default is ``IlmThread_<major>_<minor>``.
 
-* **ILMBASE\_INTERNAL\_ILMTHREAD\_NAMESPACE**
- 
-  Real namespace for IlmThread that will end up in compiled symbols. Default is ``IlmThread\_<major>\_<minor>``.
+* ``ILMTHREAD_NAMESPACE_CUSTOM``
 
-* **ILMBASE\_INTERNAL\_IMATH\_NAMESPACE**
- 
-  Real namespace for Imath that will end up in compiled symbols. Default is ``Imath\_<major>\_<minor>``.
-
-* **ILMBASE\_NAMESPACE\_CUSTOM**
- 
   Whether the namespace has been customized (so external users know)
 
-* **OPENEXR\_IMF\_NAMESPACE**
- 
-  Public namespace alias for Imath. Default is ``Imf``.
+### Component Options:
 
-* **OPENEXR\_INTERNAL\_IMF\_NAMESPACE**
- 
-  Real namespace for Imath that will end up in compiled symbols. Default is ``Imf\_<major>\_<minor>``.
+* ``BUILD_TESTING``
 
-* **OPENEXR\_NAMESPACE\_CUSTOM**
- 
-  Whether the namespace has been customized (so external users know)
+  Build the testing tree. Default is ``ON``.  Note that
+  this causes the test suite to be compiled, but it is not
+  executed. To execute the suite, run "make test".
 
-### Python Options:
+* ``OPENEXR_RUN_FUZZ_TESTS``
 
-* **PyIlmBase\_Python2\_SITEARCH\_REL**
+  Controls whether to include the fuzz tests (very slow). Default is ``OFF``.
 
-  This will normally be computed based on where the python2 binary and site-packages live and
-  then be a relative path based on the root of those. For example, if site-packages is in
-  ``/usr/lib/python2.7/site-packages`` and the python binary is ``/usr/bin/python2.7``, this
-  will result in the default install path being ``${CMAKE\_INSTALL\_PREFIX}/lib/python2.7/site-packages``
+* ``OPENEXR_BUILD_TOOLS``
 
-* **PyIlmBase\_Python3\_SITEARCH\_REL**
+  Build and install the binary programs (exrheader, exrinfo,
+  exrmakepreview, etc). Default is ``ON``.
+  
+* ``OPENEXR_INSTALL_EXAMPLES``
 
-  Identical logic to PyIlmBase\_Python2\_SITEARCH\_REL path above, but for python 3.x
-
-### Linting Options:
-
-These linting options are experimental, and primarily for developer-only use at this time.
-
-* **ILMBASE\_USE\_CLANG\_TIDY**
- 
-  Enable clang-tidy for IlmBase libraries, if it is available. Default is OFF.
-
-* **OPENEXR\_USE\_CLANG\_TIDY**
- 
-  Enable clang-tidy for OpenEXR libraries, if it is available. Default is OFF.
-
-### Testing Options:
-
-
-* **BUILD\_TESTING**
- 
-  Build the testing tree. Default is ON.  Note that this causes the test suite to be compiled, but it is not executed.
-
-* **OPENEXR\_RUN\_FUZZ\_TESTS**
- 
-  Controls whether to include the fuzz tests (very slow). Default is OFF.
+  Build and install the example code. Default is ``ON``.
 
 ### Additional CMake Options:
 
-See the cmake documentation for more information (https://cmake.org/cmake/help/v3.12/)
+See the cmake documentation for more information
+(https://cmake.org/cmake/help/v3.12/)
 
-* **CMAKE\_BUILD\_TYPE**
+* ``CMAKE_BUILD_TYPE``
 
-  For builds when not using a multi-configuration generator. Available values: ``Debug``, ``Release``, ``RelWithDebInfo``, ``MinSizeRel``
+  For builds when not using a multi-configuration generator. Available
+  values: ``Debug``, ``Release``, ``RelWithDebInfo``, ``MinSizeRel``
 
-* **BUILD\_SHARED\_LIBS**
+* ``BUILD_SHARED_LIBS``
 
   This is the primary control whether to build static libraries or
   shared libraries / dlls (side note: technically a convention, hence
-  not an official ``CMAKE\_`` variable, it is defined within cmake and
+  not an official ``CMAKE_`` variable, it is defined within cmake and
   used everywhere to control this static / shared behavior)
 
-* For forcing particular compilers to match VFX platform requirements
+* ``OPENEXR_CXX_STANDARD``
 
-  ** CMAKE\_CXX\_COMPILER**
+  C++ standard to compile against. This obeys the global
+  ``CMAKE_CXX_STANDARD`` but doesn’t force the global setting to
+  enable sub-project inclusion. Default is ``14``.
 
-  ** CMAKE\_C\_COMPILER**
+* ``CMAKE_CXX_COMPILER``
 
-  ** CMAKE\_LINKER**
+  The C++ compiler.        
 
-     All the related cmake compiler flags (i.e. CMAKE\_CXX_FLAGS, CMAKE_CXX_FLAGS_DEBUG)
+* ``CMAKE_C_COMPILER``
 
-  ** CMAKE\_INSTALL\_RPATH**
+  The C compiler.
+  
+* ``CMAKE_INSTALL_RPATH``
 
-     For non-standard install locations where you don’t want to have to set ``LD_LIBRARY_PATH`` to use them
+  For non-standard install locations where you don’t want to have to
+  set ``LD_LIBRARY_PATH`` to use them
+
+* ``CMAKE_EXPORT_COMPILE_COMMANDS``
+
+  Enable/Disable output of compile commands during generation. Default
+  is ``OFF``.
+
+* ``CMAKE_VERBOSE_MAKEFILE``
+
+  Echo all compile commands during make. Default is ``OFF``.
 
 ## Cmake Tips and Tricks:
 
-If you have ninja (https://ninja-build.org/) installed, it is faster than make. You can generate ninja files using cmake when doing the initial generation:
+If you have ninja (https://ninja-build.org/) installed, it is faster
+than make. You can generate ninja files using cmake when doing the
+initial generation:
 
     % cmake -G “Ninja” ..
 
-If you would like to confirm compile flags, you don’t have to specify the verbose configuration up front, you can instead run
+If you would like to confirm compile flags, you don’t have to specify
+the verbose configuration up front, you can instead run
 
     % make VERBOSE=1
-
-## Configuring via Autoconf
-
-As an alternative to CMake on Linux systems, the OpenEXR build can be configured via the provided bootstrap/configure scripts: 
-
-    % cd $source_directory/IlmBase
-    % ./bootstrap
-    % ./configure --prefix=$install_directory
-    % make
-    % make install
-    
-    % cd $source_directory/OpenEXR
-    % ./bootstrap
-    % ./configure --prefix=$install_directory \ 
-     --with-ilmbase-prefix=$install_directory
-    % make 
-    % make install
-    
-    % cd $source_directory/PyIlmBase
-    % ./bootstrap
-    % ./configure --prefix=$install_directory \ 
-     --with-ilmbase-prefix=$install_directory
-    % make 
-    % make install
-
-Run ``./configure --help`` for a complete set of configuration options.
