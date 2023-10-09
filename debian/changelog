@@ -1,3 +1,10 @@
+openexr (3.1.5-5.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Add upstream fix for FTBFS with gcc 13. (Closes: #1037801)
+
+ -- Adrian Bunk <bunk@debian.org>  Fri, 11 Aug 2023 00:09:40 +0300
+
 openexr (3.1.5-5) unstable; urgency=medium
 
   * Team upload.
